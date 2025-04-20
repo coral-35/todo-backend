@@ -29,9 +29,17 @@ app.use((req, res, next) => {
 });
 
 // GET: ユーザーのToDo取得（RLSにより自分の分だけ返る）
-app.get('/todo-app', async (req, res) => {
-  const { data, error } = await req.supabase.from('todos').select('*');
-  if (error) return res.status(500).json({ error: error.message });
+app.get("/todo-app", async (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+  if (userError) return res.status(401).json({ error: "Unauthorized" });
+
+  const { data, error } = await supabase
+    .from("todos")
+    .select("*")
+    .eq("user_id", user.id);
+
+  if (error) return res.status(500).json({ error });
   res.json(data);
 });
 
